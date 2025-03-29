@@ -37,7 +37,7 @@
 ### 后端
 - FastAPI
 - Python 3.8+
-- Claude 3.7 AI API
+- OpenAI兼容接口 Claude 3.7+ AI API
 - BeautifulSoup4（网页解析）
 
 ### 前端
@@ -49,8 +49,8 @@
 
 1. 克隆项目并安装依赖：
 ```bash
-git clone [项目地址]
-cd [项目目录]
+git clone https://github.com/dalerkd/EasyAIReading
+cd EasyAIReading
 pip install -r requirements.txt
 ```
 
@@ -62,22 +62,22 @@ cp .env.example .env
 
 3. 启动服务：
 ```bash
+python main.py
+```
+或
+```bash
 uvicorn main:app --reload
 ```
+
 
 4. 访问 http://localhost:8000 开始使用
 
 5. 经典处理时间
 文字越长越复杂，时间会增加一些.
-待优化内容长度: 24,361 字符时，大约需要10段请求,总用时约800秒.取决于你的AI服务器速度.
+
+极端例子:待优化内容长度: 24,361 字符时，大约需要10段请求,总用时约800秒.取决于你的AI服务器速度.
 
 
-## 环境变量配置
-
-```env
-CLAUDE_API_KEY=your_api_key_here
-SSL_VERIFY=True  # 设置为 False 可禁用 SSL 验证
-```
 
 ## 使用说明
 
@@ -108,23 +108,16 @@ SSL_VERIFY=True  # 设置为 False 可禁用 SSL 验证
 
 
 ## 难点:
-### 场景1：如果长度超过一次返回的内容，则AI需要多次返回。
-(一轮需要80+秒)
-
-### 场景2: AI生成的多轮内容可能存在重叠
-
-### 场景3: 有一定AI生成的 JS CSS云端链接是错误的
+### 场景1：如果长度超过一次返回的内容，则AI需要多次返回  [X]
+### 场景2: AI生成的多轮内容可能存在重叠   [X]
+### 场景3: 有一定AI生成的 JS CSS云端链接是错误的   [X]
 
 
 ## 开发计划
-
 - [ ] 完善网页链接解析,添加更多内容源支持
 目前因为还是试验状态,会被很多站点拦截,或者无法获取到JS渲染后的内容
 - [ ] docker化
 
-## 贡献指南
-
-欢迎提交 Issue 和 Pull Request 来帮助改进项目。
 
 ## 许可证
 
