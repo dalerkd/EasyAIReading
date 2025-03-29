@@ -1,0 +1,7 @@
+.env
+venv/*
+tmp/*
+logs/*
+static/html/*
+
+

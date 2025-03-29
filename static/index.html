@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>易读工具</title>
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --accent-color: #3498db;
+            --bg-color: #f9fafb;
+            --text-color: #2c3e50;
+            --processing-bg: #fff3cd;      /* 处理中的背景色（黄色） */
+            --processing-color: #856404;    /* 处理中的文字颜色 */
+            --completed-bg: #d4edda;       /* 完成时的背景色（绿色） */
+            --completed-color: #155724;    /* 完成时的文字颜色 */
+            --error-bg: #f8d7da;           /* 错误时的背景色（红色） */
+            --error-color: #721c24;        /* 错误时的文字颜色 */
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding: 2rem 0;
+            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+            border-radius: 12px;
+            color: white;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin: 0;
+            padding: 0;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+        
+        .slogan {
+            margin-top: 1rem;
+            font-size: 1.2rem;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+        
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 4px;
+            display: none;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .processing {
+            background: var(--processing-bg);
+            color: var(--processing-color);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            transition: all 0.3s ease;
+        }
+        
+        .timer {
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        textarea {
+            width: 100%;
+            min-height: 150px;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            resize: vertical;
+        }
+        
+        .tab-container {
+            margin-bottom: 20px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 1px;
+        }
+        
+        .tab-button {
+            padding: 12px 24px;
+            border: 1px solid #e1e1e1;
+            background: white;
+            cursor: pointer;
+            margin-right: 5px;
+            border-radius: 8px 8px 0 0;
+            color: var(--text-color);
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        
+        .tab-button:hover {
+            background: #f8f9fa;
+            border-color: var(--accent-color);
+        }
+        
+        .tab-button.active {
+            background: var(--accent-color);
+            color: white;
+            border-color: var(--accent-color);
+        }
+        
+        .input-container {
+            display: none;
+        }
+        
+        .input-container.active {
+            display: block;
+        }
+        
+        .status-steps {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.7);  /* 半透明白色背景 */
+        }
+        
+        .step {
+            display: flex;
+            align-items: center;
+            margin: 5px 0;
+            color: #6c757d;
+        }
+        
+        .step.active {
+            color: #007bff;
+            font-weight: bold;
+        }
+        
+        .step.completed {
+            color: #28a745;
+        }
+        
+        .step-icon {
+            margin-right: 15px;
+            width: 24px;
+            text-align: center;
+            font-size: 1.1rem;
+        }
+        
+        .step-text {
+            flex-grow: 1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .step-detail {
+            margin-left: 10px;
+            color: #666;
+            font-size: 0.9em;
+        }
+        
+        .step.completed .step-icon {
+            color: #2ecc71;
+        }
+        
+        .step.active .step-icon {
+            color: var(--accent-color);
+        }
+        
+        /* 添加完成状态的样式 */
+        .spinner.completed {
+            border: none;
+            animation: none;
+        }
+        
+        .spinner.completed i {
+            font-size: 20px;
+            line-height: 20px;
+        }
+        
+        .processing.completed {
+            background: var(--completed-bg);
+            color: var(--completed-color);
+        }
+        
+        /* 添加淡入效果 */
+        .status-transition {
+            transition: all 0.3s ease;
+        }
+        
+        /* 处理完成时的图标样式 */
+        .processing.completed .spinner i {
+            color: var(--completed-color) !important;
+            font-size: 20px;
+        }
+        
+        /* 添加边框效果 */
+        .processing {
+            border: 1px solid transparent;
+        }
+        
+        .processing.completed {
+            border-color: #c3e6cb;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1><i class="fas fa-book-reader"></i> 易读工具</h1>
+        <div class="slogan">让阅读如此容易</div>
+    </div>
+    
+    <div class="container">
+        <div class="tab-container">
+            <button class="tab-button active" onclick="switchTab('text')">复制粘贴方式(推荐)</button>
+            <button class="tab-button" onclick="switchTab('url')">网页链接解析(试验)</button>
+        </div>
+        
+        <div id="urlInput" class="input-container active">
+            <p>输入网页链接，我们将为您提取主要内容并优化阅读体验。</p>
+            <input type="text" id="url" placeholder="请输入网页链接">
+        </div>
+        
+        <div id="textInput" class="input-container">
+            <p>直接粘贴PDF或者论文或者新闻，随便输入一些你懒得读的文本内容，我们将为您优化阅读体验。</p>
+            <textarea id="content" placeholder="请输入需要处理的文本内容"></textarea>
+        </div>
+        
+        <button onclick="processContent()" id="processButton">智能优化</button>
+        <div id="result"></div>
+        <div id="processingStatus" style="display: none;" class="processing">
+            <div class="spinner"></div>
+            <span>正在处理中...</span>
+            <span class="timer">已用时：<span id="timer">0</span> 秒</span>
+            
+            <div class="status-steps">
+                <div class="step" id="stepWaiting">
+                    <span class="step-icon"><i class="fas fa-hourglass-start"></i></span>
+                    <div class="step-text">
+                        <span class="step-main">等待处理...</span>
+                        <span class="step-detail"></span>
+                    </div>
+                </div>
+                <div class="step" id="stepExtract">
+                    <span class="step-icon"><i class="fas fa-file-import"></i></span>
+                    <div class="step-text">
+                        <span class="step-main">提取网页内容</span>
+                        <span class="step-detail"></span>
+                    </div>
+                </div>
+                <div class="step" id="stepAI">
+                    <span class="step-icon"><i class="fas fa-magic"></i></span>
+                    <div class="step-text">
+                        <span class="step-main">AI优化处理</span>
+                        <span class="step-detail"></span>
+                    </div>
+                </div>
+                <div class="step" id="stepComplete">
+                    <span class="step-icon"><i class="fas fa-check-circle"></i></span>
+                    <div class="step-text">
+                        <span class="step-main">处理完成</span>
+                        <span class="step-detail"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let timerInterval;
+        let seconds = 0;
+        
+        function updateTimer() {
+            seconds++;
+            const timerElement = document.getElementById('timer');
+            timerElement.textContent = formatTime(seconds).replace('用时：', '');  // 移除"用时："前缀，因为HTML中已有
+        }
+        
+        function startTimer() {
+            seconds = 0;
+            timerInterval = setInterval(updateTimer, 1000);
+        }
+        
+        function stopTimer() {
+            clearInterval(timerInterval);
+            seconds = 0;
+        }
+        
+        function switchTab(tab) {
+            // 更新按钮状态
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // 更新输入区域显示
+            document.querySelectorAll('.input-container').forEach(container => {
+                container.classList.remove('active');
+            });
+            document.getElementById(tab + 'Input').classList.add('active');
+        }
+        
+        function updateStepStatus(stepId, status, detail = null) {
+            const step = document.getElementById(stepId);
+            const icon = step.querySelector('.step-icon');
+            const detailSpan = step.querySelector('.step-detail');
+            
+            // 重置所有状态
+            step.classList.remove('active', 'completed');
+            
+            switch(status) {
+                case 'waiting':
+                    icon.textContent = '⭕';
+                    break;
+                case 'active':
+                    step.classList.add('active');
+                    icon.textContent = '🔄';
+                    if (detail) {
+                        detailSpan.textContent = detail;
+                    }
+                    break;
+                case 'completed':
+                    step.classList.add('completed');
+                    icon.textContent = '✅';
+                    break;
+            }
+        }
+        
+        // 添加时间格式化函数
+        function formatTime(seconds) {
+            if (seconds < 60) {
+                return `用时：${seconds} 秒`;
+            } else {
+                const minutes = Math.floor(seconds / 60);
+                const remainingSeconds = seconds % 60;
+                return `用时：${minutes} 分钟 ${remainingSeconds} 秒`;
+            }
+        }
+        
+        async function startEventStream(task_id) {
+            const maxRetries = 5; // 最大重试次数
+            let retryCount = 0;
+            let retryDelay = 1000; // 初始重试延迟（1秒）
+
+            async function fetchWithRetry() {
+                try {
+                    const response = await fetch('/process-events', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ task_id: task_id })
+                    });
+
+                    if (!response.ok) {
+                        // 如果是 404，可能是任务还未开始，需要重试
+                        if (response.status === 404) {
+                            throw new Error('Task not found');
+                        }
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    // 重置重试计数和延迟
+                    retryCount = 0;
+                    retryDelay = 1000;
+
+                    const data = await response.json();
+                    
+                    // 处理状态更新
+                    switch(data.status) {
+                        case 'extracting':
+                            updateStepStatus('stepWaiting', 'completed');
+                            updateStepStatus('stepExtract', 'active', 
+                                data.content_length ? `内容长度: ${data.content_length.toLocaleString()} 字符` : '');
+                            break;
+                        case 'ai_processing':
+                            updateStepStatus('stepWaiting', 'completed');
+                            updateStepStatus('stepExtract', 'completed');
+                            updateStepStatus('stepAI', 'active', `第 ${data.round} 段AI数据结果获取成功, 第 ${data.round+1} 段开始`);
+                            break;
+                        case 'completed':
+                            // 更新所有步骤状态
+                            updateStepStatus('stepWaiting', 'completed');
+                            updateStepStatus('stepExtract', 'completed');
+                            updateStepStatus('stepAI', 'completed');
+                            updateStepStatus('stepComplete', 'completed');
+                            
+                            const processingStatus = document.getElementById('processingStatus');
+                            const spinnerElement = processingStatus.querySelector('.spinner');
+                            const statusTextElement = processingStatus.querySelector('.spinner + span');
+                            const timerElement = processingStatus.querySelector('.timer');
+                            
+                            // 添加完成状态类
+                            processingStatus.classList.remove('error');
+                            processingStatus.classList.add('completed');
+                            
+                            // 更新图标和文本
+                            spinnerElement.style.animation = 'none';
+                            spinnerElement.innerHTML = '<i class="fas fa-check-circle"></i>';
+                            statusTextElement.textContent = '处理完成';
+                            timerElement.textContent = formatTime(seconds);
+                            
+                            // 显示成功链接
+                            const viewUrl = `/view/${data.file_id}`;
+                            const successMessage = `<div class="success-link">处理成功！<a href="${viewUrl}" target="_blank">点击查看结果</a></div>`;
+                            showResult(successMessage, true);
+                            
+                            stopTimer();
+                            processButton.disabled = false;
+                            return;
+                        case 'error':
+                            processingStatus.classList.remove('completed');
+                            processingStatus.classList.add('error');
+                            showResult(data.error || '处理失败', false);
+                            processButton.disabled = false;
+                            stopTimer();
+                            return;
+                    }
+
+                    // 短暂延迟后继续请求状态
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    await fetchWithRetry(); // 继续获取状态
+
+                } catch (error) {
+                    console.log(`获取状态失败: ${error.message}. 重试次数: ${retryCount + 1}`);
+                    
+                    if (retryCount < maxRetries) {
+                        retryCount++;
+                        // 使用指数退避策略增加重试延迟
+                        retryDelay = Math.min(retryDelay * 1.5, 10000); // 最大延迟10秒
+                        
+                        // 显示重试状态
+                        const retryMessage = `正在重试获取状态 (${retryCount}/${maxRetries})...`;
+                        document.querySelector('#processingStatus .spinner + span').textContent = retryMessage;
+                        
+                        await new Promise(resolve => setTimeout(resolve, retryDelay));
+                        await fetchWithRetry(); // 重试
+                    } else {
+                        showResult('获取处理状态失败，请刷新页面重试', false);
+                        stopTimer();
+                        processingStatus.style.display = 'none';
+                        processButton.disabled = false;
+                    }
+                }
+            }
+
+            await fetchWithRetry();
+        }
+        
+        async function processContent() {
+            const urlInput = document.getElementById('url');
+            const textInput = document.getElementById('content');
+            const resultDiv = document.getElementById('result');
+            const processingStatus = document.getElementById('processingStatus');
+            const processButton = document.getElementById('processButton');
+            
+            let content = '';
+            let isUrl = document.getElementById('urlInput').classList.contains('active');
+            
+            if (isUrl) {
+                content = urlInput.value;
+                if (!content) {
+                    showResult('请输入有效的URL', false);
+                    return;
+                }
+            } else {
+                content = textInput.value;
+                if (!content) {
+                    showResult('请输入需要处理的内容', false);
+                    return;
+                }
+            }
+
+            try {
+                resultDiv.style.display = 'none';
+                processingStatus.style.display = 'block';
+                processButton.disabled = true;
+                startTimer();
+
+                // 初始化处理
+                const initResponse = await fetch('/init-process', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        url: isUrl ? content : null,
+                        text: isUrl ? null : content
+                    }),
+                });
+
+                if (!initResponse.ok) {
+                    throw new Error('初始化处理失败');
+                }
+
+                const { task_id } = await initResponse.json();
+                
+                // 重置所有步骤状态
+                updateStepStatus('stepWaiting', 'waiting');
+                updateStepStatus('stepExtract', 'waiting');
+                updateStepStatus('stepAI', 'waiting');
+                updateStepStatus('stepComplete', 'waiting');
+                
+                // 清除所有步骤的详细信息
+                document.querySelectorAll('.step-detail').forEach(detail => {
+                    detail.textContent = '';
+                });
+
+                // 开始轮询状态
+                await startEventStream(task_id);
+                
+            } catch (error) {
+                stopTimer();
+                processingStatus.style.display = 'none';
+                processButton.disabled = false;
+                showResult('请求失败，请稍后重试', false);
+            }
+        }
+
+        function showResult(message, isSuccess) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'block';
+            resultDiv.className = isSuccess ? 'success' : 'error';
+            resultDiv.innerHTML = message;
+            
+            // 如果是成功消息，添加到处理状态下方
+            if (isSuccess) {
+                const processingStatus = document.getElementById('processingStatus');
+                processingStatus.style.display = 'block';  // 保持状态显示
+            }
+        }
+    </script>
+</body>
+</html> 
