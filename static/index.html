@@ -274,12 +274,12 @@
             <button class="tab-button" onclick="switchTab('url')">网页链接解析(试验)</button>
         </div>
         
-        <div id="urlInput" class="input-container active">
+        <div id="urlInput" class="input-container">
             <p>输入网页链接，我们将为您提取主要内容并优化阅读体验。</p>
             <input type="text" id="url" placeholder="请输入网页链接">
         </div>
         
-        <div id="textInput" class="input-container">
+        <div id="textInput" class="input-container active">
             <p>直接粘贴PDF或者论文或者新闻，随便输入一些你懒得读的文本内容，我们将为您优化阅读体验。</p>
             <textarea id="content" placeholder="请输入需要处理的文本内容"></textarea>
         </div>
@@ -289,7 +289,7 @@
         <div id="processingStatus" style="display: none;" class="processing">
             <div class="spinner"></div>
             <span>正在处理中...</span>
-            <span class="timer">已用时：<span id="timer">0</span> 秒</span>
+            <span class="timer">已用时：<span id="timer">0</span></span>
             
             <div class="status-steps">
                 <div class="step" id="stepWaiting">
@@ -331,7 +331,7 @@
         function updateTimer() {
             seconds++;
             const timerElement = document.getElementById('timer');
-            timerElement.textContent = formatTime(seconds).replace('用时：', '');  // 移除"用时："前缀，因为HTML中已有
+            timerElement.textContent = formatTime(seconds);
         }
         
         function startTimer() {
@@ -349,7 +349,7 @@
             document.querySelectorAll('.tab-button').forEach(button => {
                 button.classList.remove('active');
             });
-            event.target.classList.add('active');
+            document.querySelector(`.tab-button[onclick="switchTab('${tab}')"]`).classList.add('active');
             
             // 更新输入区域显示
             document.querySelectorAll('.input-container').forEach(container => {
@@ -384,14 +384,14 @@
             }
         }
         
-        // 添加时间格式化函数
+        // 修改时间格式化函数，统一处理所有时间显示格式
         function formatTime(seconds) {
             if (seconds < 60) {
-                return `用时：${seconds} 秒`;
+                return `${seconds}秒`;  // 始终添加"秒"单位
             } else {
                 const minutes = Math.floor(seconds / 60);
                 const remainingSeconds = seconds % 60;
-                return `用时：${minutes} 分钟 ${remainingSeconds} 秒`;
+                return `${minutes}分钟 ${remainingSeconds}秒`;  // 始终添加"秒"单位
             }
         }
         
@@ -456,7 +456,7 @@
                             spinnerElement.style.animation = 'none';
                             spinnerElement.innerHTML = '<i class="fas fa-check-circle"></i>';
                             statusTextElement.textContent = '处理完成';
-                            timerElement.textContent = formatTime(seconds);
+                            timerElement.textContent = `已用时：${formatTime(seconds)}`;
                             
                             // 显示成功链接
                             const viewUrl = `/view/${data.file_id}`;
@@ -587,6 +587,12 @@
                 processingStatus.style.display = 'block';  // 保持状态显示
             }
         }
+
+        // 添加页面加载完成后的初始化函数
+        document.addEventListener('DOMContentLoaded', function() {
+            // 确保文本输入模式被选中
+            switchTab('text');
+        });
     </script>
 </body>
 </html> 

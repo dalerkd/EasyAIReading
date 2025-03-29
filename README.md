@@ -7,6 +7,11 @@
 数字生命卡兹克[用AI把PDF一键变成能玩的可视化网页，这不比PPT酷多了?](https://mp.weixin.qq.com/s/JVxbbkR587_Mxpu02k29Kw)
 
 
+UI:
+![](effect-01.png)
+优化结果:
+![](effect-02.png)
+
 ## 功能特点
 
 ### 1. 内容处理
