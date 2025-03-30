@@ -82,7 +82,8 @@ uvicorn main:app --reload
 
 极端例子:待优化内容长度: 24,361 字符时，大约需要10段请求,总用时约800秒.取决于你的AI服务器速度.
 
-
+## 测试用例
+python -m unittest tests/test_merge_responses.py -v
 
 ## 使用说明
 

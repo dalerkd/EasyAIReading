@@ -168,7 +168,9 @@ def load_prompt(filename: str) -> str:
 - 配色方案应专业、和谐，适合长时间阅读
 ## 技术规范
 - 使用HTML5、TailwindCSS 3.0+（通过CDN引入）和必要的JavaScript
-如涉及则优先使用正确链接:https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css
+如涉及则优先使用正确版本链接:
+https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css
+https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/lib/index.min.js
 - 实现完整的深色/浅色模式切换功能，默认跟随系统设置
 - 代码结构清晰，包含适当注释，便于理解和维护
 ## 响应式设计
@@ -289,6 +291,7 @@ TMP_DIR.mkdir(exist_ok=True)
 
 
 def merge_ai_strings(first, second):
+    """合并两个字符串，检查重叠部分"""
     # 可能的最大重叠长度是A的长度和B的长度中较小的那个
     max_overlap = min(len(first), len(second), 100)
     
@@ -301,16 +304,71 @@ def merge_ai_strings(first, second):
     # 如果没有重叠，直接连接
     return first + second
 
+import re
+
+def chunk_clear(chunks):
+    """清理分块,由于AI的返回内容可能会有多余的空行和换行符，导致直接合并html会出问题"""
+
+    # Step 1: Remove chunks without valid HTML tags
+    cleaned_chunks = []
+    for i, chunk in enumerate(chunks):
+        if not any(tag in chunk.lower() for tag in ["</style>", "</script>", "</div>", "</p>", "</section>", "</h1>", "</h2>"]):
+            logger.warning(f"第 {i + 1} 块因缺少有效HTML标签被移除")
+            continue
+        cleaned_chunks.append(chunk)
+
+    # Step 2: Fix specific cases in the cleaned chunks
+    if len(cleaned_chunks) > 0:
+        # Fix case: xxxxxxxxx\n\n<!DOCTYPE html>
+        cleaned_chunks[0] = cleaned_chunks[0][cleaned_chunks[0].find('<'):]
+        # Fix case: </html>\n\nxxxx这个HTML文件现在是完整的...您可以看效果
+        cleaned_chunks[-1] = cleaned_chunks[-1][:cleaned_chunks[-1].rfind('</html>') + len('</html>')]
+
+    # Step 3: Remove ```html\n from the beginning of each chunk
+    final_chunks = []
+    for chunk in cleaned_chunks:
+        # If chunk starts with ```html\n, remove it
+        cleaned_chunk = re.sub(r'^```html\s*\n?', '', chunk, count=1)
+        final_chunks.append(cleaned_chunk)
+
+    return final_chunks
+
+
 def merge_ai_responses(chunks):
     combined_content = ""
-    if len(chunks) > 0:
-        # fix这种情况: # xxxxxxxxx\n\n<!DOCTYPE html>
-        chunks[0] = chunks[0][chunks[0].find('<'):]
-        # fix这种情况: </html>\n\nxxxx这个HTML文件现在是完整的...您可以看效果
-        chunks[-1] = chunks[-1][:chunks[-1].rfind('</html>')]
+    chunks = chunk_clear(chunks)
     for chunk in chunks:
         combined_content = merge_ai_strings(combined_content, chunk)
     return combined_content
+
+
+def is_complete_html(content: str) -> bool:
+    """检查AI回复内容是否已经完成了HTML输出"""
+
+    ''''
+    AI的回复可能存在随机性,最终结果可能并不存在</html>'
+    1. 检查是否包含</html>标签
+    2. ```html开头 找到最后一个```,如果后面还有内容能匹配 "精美"
+    eg: ```\n\n通过这个设计精美的网页，我们......
+    '''
+
+    # 1. 检查是否包含</html>标签
+    if "</html>" in content.lower():
+        return True
+    
+    # 2. 检查不存在</html>标签的情况
+    if content.startswith("```html"):
+        # 找到最后一个```
+        last_code_block = content.rsplit("```", 1)[-1]
+        # 检查是否包含"精美"
+        if "精美" in last_code_block:
+            return True
+    
+    # 3. 检查特殊情况,本次没有任何html代码,必须结束,防止无限循环
+    if not any(tag in content.lower() for tag in ["</style>", "</script>", "</div>", "</p>", "</section>", "</h1>", "</h2>"]):
+        return True
+
+    return False
 
 
 
@@ -379,7 +437,7 @@ async def process_status_generator(url: Optional[str] = None, text: Optional[str
             ]
             
             full_content = []
-            max_attempts = 10
+            max_attempts = 20
             attempt = 0
             
             while attempt < max_attempts:
@@ -398,7 +456,7 @@ async def process_status_generator(url: Optional[str] = None, text: Optional[str
                         await f.write(current_content)
                     logger.info(f"保存第 {attempt + 1} 轮AI返回数据: {tmp_file}")
                     
-                    if "</html>" in current_content.lower():
+                    if is_complete_html(current_content):  # 使用新的检查函数
                         break
                         
                     # 从文件加载续写提示词（如果有）
@@ -485,4 +543,4 @@ if __name__ == "__main__":
         host="0.0.0.0", 
         port=8000,
         log_level="info"
-    ) 
+    )

@@ -11,7 +11,9 @@
 - 配色方案应专业、和谐，适合长时间阅读
 ## 技术规范
 - 使用HTML5、TailwindCSS 3.0+（通过CDN引入）和必要的JavaScript
-如涉及则优先使用正确链接:https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css
+如涉及则优先使用正确版本链接:
+https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css
+https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/lib/index.min.js
 - 实现完整的深色/浅色模式切换功能，默认跟随系统设置
 - 代码结构清晰，包含适当注释，便于理解和维护
 ## 响应式设计

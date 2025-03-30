@@ -325,25 +325,74 @@
     </div>
 
     <script>
-        let timerInterval;
+        let timerInterval = null;
         let seconds = 0;
-        
+
+        function ensureTimerVisible() {
+            // Make sure processing status is visible
+            const processingStatus = document.getElementById('processingStatus');
+            if (processingStatus) {
+                processingStatus.style.display = 'block';
+            }
+            // Wait for DOM update
+            return new Promise(resolve => requestAnimationFrame(resolve));
+        }
+
+        function resetTimer() {
+            seconds = 0;
+            const timerElement = document.getElementById('timer');
+            if (timerElement) {
+                timerElement.textContent = formatTime(seconds);
+            }
+        }
+
+        function ensureTimerExists() {
+            let timerElement = document.getElementById('timer');
+            const processingStatus = document.getElementById('processingStatus');
+            
+            if (!timerElement && processingStatus) {
+                const timerContainer = processingStatus.querySelector('.timer');
+                if (timerContainer) {
+                    // 清空内容，重新创建
+                    timerContainer.innerHTML = '已用时：<span id="timer">0</span>';
+                    timerElement = document.getElementById('timer');
+                    console.log('重新创建了timer元素');
+                }
+            }
+            
+            return timerElement;
+        }
+
         function updateTimer() {
             seconds++;
-            const timerElement = document.getElementById('timer');
-            timerElement.textContent = formatTime(seconds);
+            const timerElement = ensureTimerExists();
+            if (timerElement) {
+                timerElement.textContent = formatTime(seconds);
+            } else {
+                console.warn('无法找到或创建timer元素');
+                stopTimer();
+            }
         }
-        
-        function startTimer() {
-            seconds = 0;
+
+        async function startTimer() {
+            // Ensure timer element is visible first
+            await ensureTimerVisible();
+            
+            // Reset and start timer
+            resetTimer();
+            if (timerInterval) {
+                clearInterval(timerInterval);
+            }
             timerInterval = setInterval(updateTimer, 1000);
         }
-        
+
         function stopTimer() {
-            clearInterval(timerInterval);
-            seconds = 0;
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
         }
-        
+
         function switchTab(tab) {
             // 更新按钮状态
             document.querySelectorAll('.tab-button').forEach(button => {
@@ -456,7 +505,6 @@
                             spinnerElement.style.animation = 'none';
                             spinnerElement.innerHTML = '<i class="fas fa-check-circle"></i>';
                             statusTextElement.textContent = '处理完成';
-                            timerElement.textContent = `已用时：${formatTime(seconds)}`;
                             
                             // 显示成功链接
                             const viewUrl = `/view/${data.file_id}`;
@@ -505,6 +553,53 @@
             await fetchWithRetry();
         }
         
+        function resetProcessingStatus() {
+            const processingStatus = document.getElementById('processingStatus');
+            if (processingStatus) {
+                // 保存原始HTML结构
+                const originalHTML = `
+                    <div class="spinner"></div>
+                    <span>正在处理中...</span>
+                    <span class="timer">已用时：<span id="timer">0</span></span>
+                    
+                    <div class="status-steps">
+                        <div class="step" id="stepWaiting">
+                            <span class="step-icon"><i class="fas fa-hourglass-start"></i></span>
+                            <div class="step-text">
+                                <span class="step-main">等待处理...</span>
+                                <span class="step-detail"></span>
+                            </div>
+                        </div>
+                        <div class="step" id="stepExtract">
+                            <span class="step-icon"><i class="fas fa-file-import"></i></span>
+                            <div class="step-text">
+                                <span class="step-main">提取网页内容</span>
+                                <span class="step-detail"></span>
+                            </div>
+                        </div>
+                        <div class="step" id="stepAI">
+                            <span class="step-icon"><i class="fas fa-magic"></i></span>
+                            <div class="step-text">
+                                <span class="step-main">AI优化处理</span>
+                                <span class="step-detail"></span>
+                            </div>
+                        </div>
+                        <div class="step" id="stepComplete">
+                            <span class="step-icon"><i class="fas fa-check-circle"></i></span>
+                            <div class="step-text">
+                                <span class="step-main">处理完成</span>
+                                <span class="step-detail"></span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // 重置为原始状态
+                processingStatus.innerHTML = originalHTML;
+                processingStatus.classList.remove('completed', 'error');
+            }
+        }
+        
         async function processContent() {
             const urlInput = document.getElementById('url');
             const textInput = document.getElementById('content');
@@ -530,11 +625,23 @@
             }
 
             try {
-                resultDiv.style.display = 'none';
-                processingStatus.style.display = 'block';
+                // 重置处理状态
+                resetProcessingStatus();
+                
+                // Start timer first
+                await startTimer();
+                
                 processButton.disabled = true;
-                startTimer();
-
+                
+                // 重置spinner状态
+                const spinnerElement = processingStatus.querySelector('.spinner');
+                spinnerElement.style.animation = ''; // 恢复动画
+                spinnerElement.innerHTML = ''; // 清除之前的完成图标
+                
+                // 重置状态文本
+                const statusTextElement = processingStatus.querySelector('.spinner + span');
+                statusTextElement.textContent = '正在处理中...';
+                
                 // 初始化处理
                 const initResponse = await fetch('/init-process', {
                     method: 'POST',
@@ -568,6 +675,7 @@
                 await startEventStream(task_id);
                 
             } catch (error) {
+                console.error('处理失败:', error);
                 stopTimer();
                 processingStatus.style.display = 'none';
                 processButton.disabled = false;
@@ -595,4 +703,4 @@
         });
     </script>
 </body>
-</html> 
+</html>

@@ -3,5 +3,4 @@ venv/*
 tmp/*
 logs/*
 static/html/*
-
-
+__pycache__/
