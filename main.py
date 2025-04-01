@@ -333,12 +333,38 @@ def chunk_clear(chunks):
 
     return final_chunks
 
+def combined_fix(combined_content):
+    """修复合并后的HTML内容中的tailwindcss CDN链接"""
+    soup = BeautifulSoup(combined_content, 'html.parser')
+    
+    # 修复tailwindcss的css链接
+    for link in soup.find_all('link'):
+        href = link.get('href', '')
+        # 检查是否是 tailwindcss 的 CSS 链接
+        if 'tailwindcss' in href and href.endswith('.css'):
+            # 替换为标准 CDN 链接
+            link['href'] = 'https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css'
+    
+    # 修复tailwindcss的js链接
+    for script in soup.find_all('script'):
+        src = script.get('src', '')
+        # 检查是否是 tailwindcss 的 JS 链接
+        if 'tailwindcss' in src and src.endswith('.js'):
+            # 替换为标准 CDN 链接
+            script['src'] = 'https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/lib/index.min.js'
+    
+    return str(soup)
 
 def merge_ai_responses(chunks):
+    """合并AI的回复内容"""
     combined_content = ""
+    # Step1:清理每个分块及检查是否完成
     chunks = chunk_clear(chunks)
+    # Step2:重叠合并算法
     for chunk in chunks:
         combined_content = merge_ai_strings(combined_content, chunk)
+    # 纠正CDN链接等
+    combined_content = combined_fix(combined_content)
     return combined_content
 
 
