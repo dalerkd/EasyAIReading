@@ -655,15 +655,14 @@ async def process_status_generator(url: Optional[str] = None, text: Optional[str
             async with aiofiles.open(final_file, 'w', encoding='utf-8') as f:
                 await f.write(combined_content)
             
-            # 复制到最终目标位置
-            file_id = str(uuid.uuid4())
-            file_path = HTML_DIR / f"{file_id}.html"
+            # 复制到最终目标位置，使用之前生成的task_id
+            file_path = HTML_DIR / f"{task_id}.html"
             async with aiofiles.open(file_path, 'w', encoding='utf-8') as f:
                 await f.write(combined_content)
                 
             yield json.dumps({
                 "status": "completed",
-                "file_id": file_id,
+                "file_id": task_id,  # 使用task_id作为file_id
                 "message": "处理完成！"
             })
             await asyncio.sleep(0.1) #添加小延迟，确保状态被前端接收
