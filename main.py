@@ -312,7 +312,7 @@ def chunk_clear(chunks):
     # Step 1: Remove chunks without valid HTML tags
     cleaned_chunks = []
     for i, chunk in enumerate(chunks):
-        if not any(tag in chunk.lower() for tag in ["</style>", "</script>", "</div>", "</p>", "</section>", "</h1>", "</h2>"]):
+        if not any(tag in chunk.lower() for tag in ["</style>", "</script>", "</div>", "</p>", "</section>", "</h1>", "</h2>", "<svg>","<div>","</svg>"]):
             logger.warning(f"第 {i + 1} 块因缺少有效HTML标签被移除")
             continue
         cleaned_chunks.append(chunk)
@@ -322,7 +322,9 @@ def chunk_clear(chunks):
         # Fix case: xxxxxxxxx\n\n<!DOCTYPE html>
         cleaned_chunks[0] = cleaned_chunks[0][cleaned_chunks[0].find('<'):]
         # Fix case: </html>\n\nxxxx这个HTML文件现在是完整的...您可以看效果
-        cleaned_chunks[-1] = cleaned_chunks[-1][:cleaned_chunks[-1].rfind('</html>') + len('</html>')]
+        # 仅当存在</html>标签时才执行截取
+        if '</html>' in cleaned_chunks[-1]:
+            cleaned_chunks[-1] = cleaned_chunks[-1][:cleaned_chunks[-1].rfind('</html>') + len('</html>')]
 
     # Step 3: Remove ```html\n from the beginning of each chunk
     final_chunks = []
@@ -334,32 +336,147 @@ def chunk_clear(chunks):
     return final_chunks
 
 def combined_fix(combined_content):
-    """修复合并后的HTML内容中的tailwindcss CDN链接"""
-    soup = BeautifulSoup(combined_content, 'html.parser')
+    """可显示性修复:修复合并后的HTML内容中的tailwindcss CDN链接"""
+    
+    # 如果内容中没有<html>标签，则添加head_html
+    head_html = '''<!DOCTYPE html>
+<html lang="zh-CN" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title></title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/tailwindcss@4.1.2/dist/lib.min.js"></script>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        :root {
+            --primary-color: #5c6ac4;
+            --primary-hover: #4959b9;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --neutral-color: #6b7280;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .dark {
+            color-scheme: dark;
+        }
+        
+        .light {
+            color-scheme: light;
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.8s ease-in-out;
+        }
+
+        .animate-slide-up {
+            animation: slideUp 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+        }
+
+        .dark .card:hover {
+            box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.1);
+            border-color: rgba(59, 130, 246, 0.4);
+        }
+
+        .light .card:hover {
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+            border-color: rgba(59, 130, 246, 0.4);
+        }
+
+        button {
+            transition: transform 0.1s ease, background-color 0.2s ease;
+        }
+
+        button:hover {
+            transform: scale(1.02);
+        }
+
+        table {
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        thead th {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .risk-high {
+            background-color: rgba(239, 68, 68, 0.15);
+            border-left: 4px solid #ef4444;
+        }
+
+        .risk-medium {
+            background-color: rgba(245, 158, 11, 0.15);
+            border-left: 4px solid #f59e0b;
+        }
+
+        .risk-low {
+            background-color: rgba(16, 185, 129, 0.15);
+            border-left: 4px solid #10b981;
+        }
+
+        .progress-bar {
+            display: inline-block;
+            height: 8px;
+            border-radius: 4px;
+            background: linear-gradient(90deg, var(--primary-color) 0%, #818cf8 100%);
+        }
+    </style>
+</head>'''
+    if "<html" not in combined_content:
+        combined_content = head_html + combined_content
+
     
     # 修复tailwindcss的css链接
-    for link in soup.find_all('link'):
-        href = link.get('href', '')
-        # 检查是否是 tailwindcss 的 CSS 链接
-        if 'tailwindcss' in href and href.endswith('.css'):
-            # 替换为标准 CDN 链接
-            link['href'] = 'https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css'
+    combined_content = re.sub(
+        r'<link[^>]*href=["\'](.*tailwindcss.*\.css)["\'][^>]*>',
+        r'<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">',
+        combined_content
+    )
     
     # 修复tailwindcss的js链接
-    for script in soup.find_all('script'):
-        src = script.get('src', '')
-        # 检查是否是 tailwindcss 的 JS 链接
-        if 'tailwindcss' in src and src.endswith('.js'):
-            # 替换为标准 CDN 链接
-            script['src'] = 'https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/lib/index.min.js'
+    combined_content = re.sub(
+        r'<script[^>]*src=["\'](.*tailwindcss.*\.js)["\'][^>]*>',
+        r'<script src="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/lib/index.min.js"></script>',
+        combined_content
+    )
     
-    return str(soup)
+    return combined_content
 
-def merge_ai_responses(chunks):
+def merge_ai_responses(raw_chunks):
     """合并AI的回复内容"""
     combined_content = ""
     # Step1:清理每个分块及检查是否完成
-    chunks = chunk_clear(chunks)
+    chunks = chunk_clear(raw_chunks)
     # Step2:重叠合并算法
     for chunk in chunks:
         combined_content = merge_ai_strings(combined_content, chunk)
