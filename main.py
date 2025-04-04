@@ -81,6 +81,11 @@ HTML_DIR.mkdir(exist_ok=True)
 # 挂载静态文件目录
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
+# 添加健康检查端点
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy"}
+
 # 添加根路由
 @app.get("/")
 async def root():

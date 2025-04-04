@@ -11,6 +11,7 @@ ENV PYTHONUNBUFFERED=1 \
 # 安装系统依赖
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # 复制项目文件

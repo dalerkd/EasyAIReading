@@ -1,4 +1,4 @@
-version: '3.8'
+name: easy_ai_reading
 
 services:
   web:
@@ -14,7 +14,7 @@ services:
       - .env
     restart: always
     labels:
-      - "com.docker.compose.project=easyaireading"
+      - "com.docker.compose.project=easy_ai_reading"
       - "com.docker.compose.service=web"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
