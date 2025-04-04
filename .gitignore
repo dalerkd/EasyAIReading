@@ -4,3 +4,4 @@ tmp/*
 logs/*
 static/html/*
 __pycache__/
+.env_setup_done
