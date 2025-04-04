@@ -52,6 +52,57 @@ UI:
 
 ## 快速开始
 
+
+首先:
+1. `git clone https://github.com/dalerkd/EasyAIReading`
+2. `复制 .env copy.example成 .env`
+3. 配置 .env里的服务器和KEY成你自己的(必须是OpenAI兼容服务器)
+
+这里提供3种启动方式:
+
+### 1. Windows快捷启动玩法
+直接运行
+`启动易度服务.bat`
+访问 `http://localhost:8000` 开始使用
+### 2. Docker启动玩法
+使用Docker的方法：
+
+1. **日常启动**：
+```bash
+docker-compose up -d
+```
+
+2. **查看运行状态**：
+```bash
+docker-compose ps
+```
+
+3. **修改代码后重新部署**：
+```bash
+# 停止当前容器
+docker-compose down
+
+# 重新构建并启动
+docker-compose up -d --build
+```
+
+4. **修改.env配置**：
+```bash
+# 直接修改.env文件后重启容器
+docker-compose restart
+```
+
+5. **查看日志**：
+```bash
+docker-compose logs -f
+```
+
+6. **停止服务**：
+```bash
+docker-compose down
+```
+
+### 3. 手工启动
 1. 克隆项目并安装依赖：
 ```bash
 git clone https://github.com/dalerkd/EasyAIReading
@@ -81,6 +132,7 @@ uvicorn main:app --reload
 文字越长越复杂，时间会增加一些.
 
 极端例子:待优化内容长度: 24,361 字符时，大约需要10段请求,总用时约800秒.取决于你的AI服务器速度.
+
 
 ## 测试用例
 python -m unittest tests/test_merge_responses.py -v
