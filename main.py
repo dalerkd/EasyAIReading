@@ -34,15 +34,20 @@ import sys
 from typing import Optional, AsyncGenerator, Dict, Any
 import httpx
 from sse_starlette.sse import EventSourceResponse
-import json  # 确保导入 json
+import json
+
+# 加载环境变量
+load_dotenv()
+
 
 # 首先创建日志目录
 log_dir = Path("logs")
 log_dir.mkdir(exist_ok=True)
 
 # 配置日志，使用 UTF-8 编码
+log_level = os.getenv("LOG_LEVEL", "INFO")  # 从.env读取日志级别，默认为INFO
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=getattr(logging, log_level),  # 使用环境变量中的日志级别
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(sys.stdout),  # 指定输出到 stdout
@@ -54,8 +59,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# 加载环境变量
-load_dotenv()
+
 
 # 配置OpenAI（移到函数外面）
 base_url = os.getenv("OPENAI_BASE_URL")
@@ -585,10 +589,21 @@ async def process_status_generator(url: Optional[str] = None, text: Optional[str
             ]
             
             full_content = []
-            max_attempts = 20
+            # 记录初始最大段数设置
+            max_ai_segments = int(os.getenv("MAX_AI_SEGMENTS", "20"))
+            logger.info(f"AI生成内容最大段数设置为: {max_ai_segments}")
             attempt = 0
             
-            while attempt < max_attempts:
+            while attempt < max_ai_segments:
+                # 每次循环重新加载环境变量，确保配置实时更新
+                load_dotenv(override=True)
+                current_max_segments = int(os.getenv("MAX_AI_SEGMENTS", "20"))
+                
+                # 如果最大段数设置发生变化，记录日志
+                if current_max_segments != max_ai_segments:
+                    logger.info(f"AI生成内容最大段数已更新: {max_ai_segments} -> {current_max_segments}")
+                    max_ai_segments = current_max_segments
+                
                 try:
                     response = await async_client.chat.completions.create(
                         model=os.getenv("OPENAI_MODEL", "claude 3.7"),#至少是 claude 3.7级别
@@ -602,7 +617,7 @@ async def process_status_generator(url: Optional[str] = None, text: Optional[str
                     tmp_file = tmp_task_dir / f"round_{attempt + 1}.html"
                     async with aiofiles.open(tmp_file, 'w', encoding='utf-8') as f:
                         await f.write(current_content)
-                    logger.info(f"保存第 {attempt + 1} 轮AI返回数据: {tmp_file}")
+                    logger.info(f"保存第 {attempt + 1}/{max_ai_segments} 段AI返回数据: {tmp_file}")
                     
                     if is_complete_html(current_content):  # 使用新的检查函数
                         break

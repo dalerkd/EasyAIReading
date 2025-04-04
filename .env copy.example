@@ -7,5 +7,12 @@ OPENAI_BASE_URL=https://api.chatgpt兼容.com/v1/
 # Claude API模型
 OPENAI_MODEL=your_claude_model_here_example_claude3.7:sonnet-20250219
 
+# 日志级别
+LOG_LEVEL=INFO  # 可选值：DEBUG, INFO, WARNING, ERROR, CRITICAL
+
 # why is Claude 3.7+ , 因为其他的效果不行啊,
 # why is OPENAI兼容接口，我手里只有兼容接口才能用 Claude3.7
+
+
+# 最大AI段数
+MAX_AI_SEGMENTS=20  # 默认最大段数为20，可以修改
