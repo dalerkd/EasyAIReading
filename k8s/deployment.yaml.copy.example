@@ -1,0 +1,73 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: yidu-env-config
+data:
+  .env: |
+    OPENAI_API_KEY=<your-api-key>
+    OPENAI_BASE_URL=<your-api-base>
+    OPENAI_MODEL=<your-model>
+    LOG_LEVEL=INFO
+    MAX_AI_SEGMENTS=20
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: yidu-deployment
+  labels:
+    app: yidu
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: yidu
+  template:
+    metadata:
+      labels:
+        app: yidu
+    spec:
+      containers:
+      - name: yidu
+        image: yidu:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8000
+        volumeMounts:
+        - name: env-config
+          mountPath: /app/.env
+          subPath: .env
+        - name: logs-volume
+          mountPath: /app/logs
+      volumes:
+      - name: env-config
+        configMap:
+          name: yidu-env-config
+      - name: logs-volume
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: yidu-service
+spec:
+  selector:
+    app: yidu
+  ports:
+    - protocol: TCP
+      port: 80          # 给公网的端口
+      targetPort: 8000  # 给pod的端口
+      nodePort: 30001   # 外部暴露的端口,用于本地调试
+  type: NodePort        # 改为 NodePort，更适合本地环境
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: yidu-config
+data:
+  # 这里的配置将从.env文件中提取
+  OPENAI_API_KEY: "${OPENAI_API_KEY}"
+  OPENAI_API_BASE: "${OPENAI_BASE_URL}"
+  OPENAI_API_MODEL: "${OPENAI_MODEL}"
+  PROXY_URL: "${OPENAI_BASE_URL}"
+  LOG_LEVEL: "${LOG_LEVEL}" 

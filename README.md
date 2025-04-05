@@ -134,6 +134,20 @@ uvicorn main:app --reload
 
 极端例子:待优化内容长度: 24,361 字符时，大约需要10段请求,总用时约800秒.取决于你的AI服务器速度.
 
+### 4. K8s集群
+
+```
+docker build -t yidu:latest .
+
+# 假设使用 Docker Hub，需要先给镜像打标签，本地执行直接忽略这两条
+docker tag yidu:latest <your-registry>/yidu:latest
+docker push <your-registry>/yidu:latest
+
+kubectl apply -f k8s/deployment.yaml
+kubectl get pods
+kubectl get services
+```
+
 
 ## 测试用例
 python -m unittest tests/test_merge_responses.py -v
